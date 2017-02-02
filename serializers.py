@@ -1,25 +1,27 @@
 from rest_framework import serializers
 
+
 class DynamicFieldsSerializerMixin(object):
     def __init__(self, *args, **kwargs):
-        fields = kwargs.pop('fields', None)
-        exclude = kwargs.pop('exclude', None)
+        fields = set(kwargs.pop('fields', {}))
+        exclude = set(kwargs.pop('exclude', {}))
 
         if fields and exclude:
             raise Exception(
-                "You can't enable fields AND exclude at the same time"
+                "You can't enable 'fields' AND 'exclude' at the same time"
             )
 
         super(self.__class__, self).__init__(*args, **kwargs)
+        current_fields = self.fields.keys()
+        fields_to_remove = exclude or fields.symmetric_difference(current_fields)
+        _ = map(self.fields.pop, fields_to_remove)
 
-        if fields is not None:
-            map(self.fields.pop, set(fields).symmetric_difference(self.fields.keys())
-
-        elif exclude is not None:
-            map(self.fields.pop, exclude)
-
-class DynamicFieldsModelSerializer(DynamicFieldsSerializerMixin, serializers.ModelSerializer):
+        
+class DynamicFieldsModelSerializer(DynamicFieldsSerializerMixin,
+                                   serializers.ModelSerializer):
     pass
     
-class DynamicFieldsHyperlinkedModelSerializer(DynamicFieldsSerializerMixin, serializers.HyperlinkedModelSerializer):
+    
+class DynamicFieldsHyperlinkedModelSerializer(DynamicFieldsSerializerMixin,
+                                              serializers.HyperlinkedModelSerializer):
     pass
